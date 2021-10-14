@@ -7,7 +7,7 @@
 #include <list>
 #include <string>
 #include <utility>
-
+#include <deque>
 //! \brief An in-order byte stream.
 
 //! Bytes are written on the "input" side and read from the "output"
@@ -16,8 +16,12 @@
 class ByteStream {
   private:
     // Your code here -- add private members as necessary.
-
-    bool _error{};  //!< Flag indicating that the stream suffered an error.
+    size_t max_size;
+    std::deque<char> Buffer={};
+    size_t write_cnt=0;
+    size_t read_cnt=0;
+    bool input_end=false;
+    bool _error;  //!< Flag indicating that the stream suffered an error.
 
   public:
     //! Construct a stream with room for `capacity` bytes.
@@ -54,6 +58,7 @@ class ByteStream {
     //! Read (i.e., copy and then pop) the next "len" bytes of the stream
     //! \returns a vector of bytes read
     std::string read(const size_t len) {
+        read_cnt+=len;
         const auto ret = peek_output(len);
         pop_output(len);
         return ret;

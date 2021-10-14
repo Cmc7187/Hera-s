@@ -16,34 +16,55 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-ByteStream::ByteStream(const size_t capacity) { DUMMY_CODE(capacity); }
+ByteStream::ByteStream(const size_t capacity):max_size(capacity){}
 
 size_t ByteStream::write(const string &data) {
-    DUMMY_CODE(data);
-    return {};
+    int len=data.size();
+    if(len>remaining_capacity())
+    len=remaining_capacity();
+    for(int i=0;i<len;i++){
+        Buffer.push_back(data[i]);
+    }
+    write_cnt+=len;
+    return len;
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
 string ByteStream::peek_output(const size_t len) const {
     DUMMY_CODE(len);
-    return {};
+    string strtemp;
+    int actual_len=len;
+    if(len>Buffer.size())actual_len=Buffer.size();
+    return strtemp.assign(Buffer.begin(),Buffer.begin()+actual_len);
 }
 
 //! \param[in] len bytes will be removed from the output side of the buffer
-void ByteStream::pop_output(const size_t len) { DUMMY_CODE(len); }
+void ByteStream::pop_output(const size_t len) { 
+    DUMMY_CODE(len); 
+    int length=len;
+    if(len>Buffer.size()) length=Buffer.size();
+        read_cnt+=length;
+    while(length){
+        Buffer.pop_front();
+        length--;
 
-void ByteStream::end_input() {}
+    }
+    }
 
-bool ByteStream::input_ended() const { return {}; }
+void ByteStream::end_input() {
+    input_end=true;
+}
 
-size_t ByteStream::buffer_size() const { return {}; }
+bool ByteStream::input_ended() const { return input_end; }
 
-bool ByteStream::buffer_empty() const { return {}; }
+size_t ByteStream::buffer_size() const { return Buffer.size(); }
 
-bool ByteStream::eof() const { return false; }
+bool ByteStream::buffer_empty() const { return Buffer.size()==0; }
 
-size_t ByteStream::bytes_written() const { return {}; }
+bool ByteStream::eof() const { return buffer_empty()&&input_ended() ;}
 
-size_t ByteStream::bytes_read() const { return {}; }
+size_t ByteStream::bytes_written() const { return write_cnt; }
 
-size_t ByteStream::remaining_capacity() const { return {}; }
+size_t ByteStream::bytes_read() const { return read_cnt; }
+
+size_t ByteStream::remaining_capacity() const { return max_size-Buffer.size(); }
