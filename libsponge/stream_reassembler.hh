@@ -5,16 +5,34 @@
 
 #include <cstdint>
 #include <string>
-
+#include<set>
+#include <iostream>
+using namespace std;
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
 class StreamReassembler {
   private:
+  struct Seg{
+    uint64_t index;
+    string data;
+    uint64_t length;
+    Seg(){};
+    Seg(const string &_data, uint64_t _index):index(_index),data(_data){
+      length=_data.size();
+    }
+    bool operator<(const Seg &seg)const{
+      return index<seg.index;
+    }
+  };
     // Your code here -- add private members as necessary.
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-
+    set<Seg> cached_substring; // 缓存的子串
+    uint64_t first_unreassembled=0;
+    size_t unreassemblerd_bytes_num=0;//缓存但还未排序的字节数
+    size_t maxindex;
+    bool end_flag=false;
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
     //! \note This capacity limits both the bytes that have been reassembled,
@@ -32,6 +50,25 @@ class StreamReassembler {
     //! \param index the index of the first byte in `data`
     //! \param eof whether or not this segment ends with the end of the stream
     void push_substring(const std::string &data, const uint64_t index, const bool eof);
+
+    //用来合并有重叠部分的子串
+    // seg1是待插入子串，seg2是原来在set的子串
+    //! \returns 返回是否合并成功
+    bool merger(Seg &seg1,const Seg &seg2);
+
+    //用来删除set中的元素
+    void remove(set<Seg>::iterator it){
+      unreassemblerd_bytes_num-=it->length;
+      cached_substring.erase(it);
+    }
+
+    void insert(const Seg &seg){
+      cached_substring.insert(seg);
+      unreassemblerd_bytes_num+=seg.length;
+    }
+    
+    //! \return 写入的字节数目
+    size_t wtriteToStream();
 
     //! \name Access the reassembled byte stream
     //!@{

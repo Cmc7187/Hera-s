@@ -52,6 +52,7 @@ void ByteStream::pop_output(const size_t len) {
     }
 
 void ByteStream::end_input() {
+    cout<<"end input called"<<endl;
     input_end=true;
 }
 

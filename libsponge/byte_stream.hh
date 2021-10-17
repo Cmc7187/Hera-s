@@ -8,6 +8,8 @@
 #include <string>
 #include <utility>
 #include <deque>
+#include <iostream>
+using namespace std;
 //! \brief An in-order byte stream.
 
 //! Bytes are written on the "input" side and read from the "output"
@@ -58,9 +60,11 @@ class ByteStream {
     //! Read (i.e., copy and then pop) the next "len" bytes of the stream
     //! \returns a vector of bytes read
     std::string read(const size_t len) {
-        read_cnt+=len;
+        //cout<<"bytesreadcalled"<<endl;
         const auto ret = peek_output(len);
+        //cout<<"read contens:"<<ret<<endl;
         pop_output(len);
+        //cout<<"streamsize:"<<buffer_size()<<"\nendinput_flag:"<<input_ended()<<endl;
         return ret;
     }
 
