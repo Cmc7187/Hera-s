@@ -23,6 +23,9 @@ class StreamReassembler {
     bool operator<(const Seg &seg)const{
       return index<seg.index;
     }
+    void print(){
+      cout<<"index:"<<index<<"  data:"+this->data<<"  length:"<<length<<endl;
+    }
   };
     // Your code here -- add private members as necessary.
 
@@ -85,6 +88,8 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+
+    uint64_t get_firstureassembled()const{return first_unreassembled;}
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH

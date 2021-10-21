@@ -20,12 +20,18 @@ class TCPReceiver {
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 
+    bool _syn=false;
+    bool _fin=false;
+    uint64_t _checkpoint=0;
+    WrappingInt32 _isn;
   public:
     //! \brief Construct a TCP receiver
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) {}
+    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity) ,_isn(0){
+      cout<<"constructor is called"<<endl;
+    }
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
@@ -51,7 +57,9 @@ class TCPReceiver {
     //!@}
 
     //! \brief number of bytes stored but not yet reassembled
-    size_t unassembled_bytes() const { return _reassembler.unassembled_bytes(); }
+    size_t unassembled_bytes() const { 
+      cout<<"unassembled_bytes() is called"<<endl;
+      return _reassembler.unassembled_bytes(); }
 
     //! \brief handle an inbound segment
     //! \returns `true` if any part of the segment was inside the window
@@ -59,8 +67,15 @@ class TCPReceiver {
 
     //! \name "Output" interface for the reader
     //!@{
-    ByteStream &stream_out() { return _reassembler.stream_out(); }
-    const ByteStream &stream_out() const { return _reassembler.stream_out(); }
+    ByteStream &stream_out() { 
+      cout<<"stream out called"<<endl;
+      return _reassembler.stream_out();
+       }
+    const ByteStream &stream_out() const {
+      cout<<"stream out called"<<endl;
+       return _reassembler.stream_out();
+
+       }
     //!@}
 };
 

@@ -23,7 +23,7 @@ class ByteStream {
     size_t write_cnt=0;
     size_t read_cnt=0;
     bool input_end=false;
-    bool _error;  //!< Flag indicating that the stream suffered an error.
+    bool _error=false;  //!< Flag indicating that the stream suffered an error.
 
   public:
     //! Construct a stream with room for `capacity` bytes.
@@ -60,9 +60,9 @@ class ByteStream {
     //! Read (i.e., copy and then pop) the next "len" bytes of the stream
     //! \returns a vector of bytes read
     std::string read(const size_t len) {
-        //cout<<"bytesreadcalled"<<endl;
+        cout<<"bytesreadcalled"<<endl;
         const auto ret = peek_output(len);
-        //cout<<"read contens:"<<ret<<endl;
+        cout<<"read contens:"<<ret<<endl;
         pop_output(len);
         //cout<<"streamsize:"<<buffer_size()<<"\nendinput_flag:"<<input_ended()<<endl;
         return ret;

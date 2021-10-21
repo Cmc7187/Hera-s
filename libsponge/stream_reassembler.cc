@@ -19,12 +19,23 @@ StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity),
 //! contiguous substrings and writes them into the output stream in order.
 //只接受不超过最大值的字节流
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
-    DUMMY_CODE(data, index, eof);
-    cout<<endl;
-    cout<<"first_unreassmbled:"<<this->first_unreassembled<<"\ndata:"+data<<"\nindex:"<<index<<"\neof:"<<eof<<endl;
+    //DUMMY_CODE(data, index, eof);
+    /*cout<<"重组器的容量:"<<_capacity<<endl;
+    cout<<"firstunreassembled="<<first_unreassembled<<endl;
+    cout<<"data:"+data<<"   index="<<index<<"   eof"<<eof<<endl;
+    cout<<"stream_size:"<<_output.buffer_size()<<"   data in stream:"+
+    _output.peek_output(_output.buffer_size())<<endl;
+    cout<<"缓存子串个数:"<<cached_substring.size()<<"    缓存的子串："<<endl;
+    for(auto it:cached_substring) it.print();
+    */
+
     string tp_data=data,tp_data2;
     size_t tp_index=index;
-    maxindex=first_unreassembled-_output.buffer_empty()+_capacity;
+    maxindex=first_unreassembled-_output.buffer_size()+_capacity;
+
+    /*cout<<"maxindex:"<<maxindex<<endl;
+    cout<<endl;*/
+
     if(index>=maxindex){
             if(eof) end_flag=true;
             if(eof&&empty()) _output.end_input();
@@ -40,6 +51,11 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         size_t offset=first_unreassembled-index;
         tp_index=first_unreassembled;
         tp_data.assign(data.begin()+offset,data.end());
+    }
+    if(tp_index>=maxindex){//裁减之后仍有可能是超出的。
+        if(eof) end_flag=true;
+        if(eof&&empty()) _output.end_input();
+        return;
     }
     if(tp_index+tp_data.size()>=maxindex){//在开头修改完之后的基础看末尾是否需要修改
         //末尾需要进行裁减，
@@ -64,18 +80,29 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
             it_back--;
         }
     }
+
+    /*cout<<"seg before insert:";
+    seg.print();
+    cout<<endl;
+    */
+
     //合并完成我们现在插入
     insert(seg);
-    cout<<"before write,unreassembled_bytes:"<<unreassemblerd_bytes_num<<endl;
     wtriteToStream();
-    cout<<"after write,unreassemblerd_bytes_num="<<unreassemblerd_bytes_num<<endl;
+
+    /*cout<<"合并push后："<<endl;
+    cout<<"firstunreassembled="<<first_unreassembled<<endl;
+    cout<<"stream_size:"<<_output.buffer_size()<<"   data in stream:"+
+    _output.peek_output(_output.buffer_size())<<endl;
+    cout<<"缓存子串个数:"<<cached_substring.size()<<"    缓存的子串："<<endl;
+    for(auto it:cached_substring) it.print();
+    cout<<"---------------------------------------------------";
+    cout<<endl;*/
 
     if(eof) end_flag=true;
     if(end_flag&&(unreassemblerd_bytes_num==0)) {
-        cout<<"endiput"<<endl;
         _output.end_input();
         }
-    cout<<"eof"<<end_flag<<"\noutput_endinputflag:"<<_output.eof()<<endl;
 }
 
 bool StreamReassembler::merger(Seg &seg1,const Seg &seg2){
@@ -110,12 +137,15 @@ size_t StreamReassembler::wtriteToStream(){
     auto it=cached_substring.begin();
     if(it==cached_substring.end()) return 0;
     while(it!=cached_substring.end()&&it->index==first_unreassembled){
+
+        cout<<"data:    "+it->data+"    was written to stream"<<endl;
+
         _output.write(it->data);
         cnt+=it->length;
         this->first_unreassembled+=it->length;
         remove(it);
         it=cached_substring.begin();
     }
-    cout<<"read:"<<cnt<<"       firunre...:"<<first_unreassembled<<endl;
+    //cout<<"read:"<<cnt<<"       firunre...:"<<first_unreassembled<<endl;
     return cnt;
 }
