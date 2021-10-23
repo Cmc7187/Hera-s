@@ -32,6 +32,21 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
+    uint16_t _windowsize{1};
+    uint64_t _abs_ack{0};//上一个确认到的绝对序号（理解为64位的ack）
+    uint64_t _bytes_in_flight{0};//已发送但是未被确认的字节数
+
+    std::queue<TCPSegment> _outstanding_segments;//缓存oustandingc segments,重传会用到
+
+    //标志一个连接的开始和结束的状态
+    bool _syn{false};
+    bool _fin{false};
+
+    bool _time_started{false};//计时器是否开始
+    size_t _time_out;
+    uint64_t _timer;
+    uint32_t _retransmit_times{0};//连续重传次数
+
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -87,6 +102,8 @@ class TCPSender {
     //! \brief relative seqno for the next byte to be sent
     WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
     //!@}
+
+    void send_data(const TCPSegment &seg);
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH
