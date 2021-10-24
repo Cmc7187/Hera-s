@@ -43,20 +43,22 @@ void TCPSender::fill_window() {
         
     }
     int datalen;
-    if(_stream.buffer_size()){//there is data to be sent
-        //if(_windowsize==0)_windowsize=1;
-        datalen=_stream.buffer_size()>_windowsize?_windowsize:_stream.buffer_size();
-        if(datalen>TCPConfig::MAX_PAYLOAD_SIZE) datalen=TCPConfig::MAX_PAYLOAD_SIZE;
-        if(datalen==0){
-            cout<<"windowsize=0,return"<<endl;
+    int remaining_size;
+    if(_windowsize==0)_windowsize=1;
+        remaining_size=_windowsize-_bytes_in_flight;
+        if(remaining_size<=0){
+            cout<<"remainingsize=0,return"<<endl;
             cout<<"----------------------fill window end-----------------------"<<endl;
             return;
         }
+    if(_stream.buffer_size()){//there is data to be sent
+        datalen=_stream.buffer_size()>remaining_size?remaining_size:_stream.buffer_size();
+        if(datalen>TCPConfig::MAX_PAYLOAD_SIZE) datalen=TCPConfig::MAX_PAYLOAD_SIZE;
         string str=_stream.read(datalen);
         TCPSegment seg;
         seg.header().seqno=wrap(_next_seqno,_isn);
         seg.payload()=Buffer(std::move(str));
-        if(_stream.eof()&&(_windowsize-datalen>0)&&!_fin){
+        if(_stream.eof()&&(remaining_size-datalen>0)&&!_fin){
             seg.header().fin=true;
             _fin=true;
         }
@@ -64,7 +66,7 @@ void TCPSender::fill_window() {
         cout<<"----------------------fill window end-----------------------"<<endl;
         return;
     }else{//determine send fin or not,there is no data left
-        if(_stream.eof()&&(_windowsize>0)&&!_fin){
+        if(_stream.eof()&&(remaining_size>0)&&!_fin){
             _fin=true;//make sure fin flag will be sent only onece
             TCPSegment seg;
             seg.header().fin=true;
@@ -163,7 +165,6 @@ void TCPSender::send_data(const TCPSegment &seg){
         _time_started=true;
         _timer=0;
     }
-    _windowsize-=seg.length_in_sequence_space();
     _segments_out.push(seg);
     _outstanding_segments.push(seg);
     cout<<"segment was sent:"<<seg.header().to_string()<<"payload:"<<seg.payload().copy()<<endl;
