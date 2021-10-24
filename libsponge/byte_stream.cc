@@ -20,8 +20,8 @@ ByteStream::ByteStream(const size_t capacity):max_size(capacity){}
 
 size_t ByteStream::write(const string &data) {
 
-    /*cout<<"bytestream::write is called"<<endl;
-    cout<<"remaining capacity: "<<remaining_capacity()<<endl;
+    cout<<"bytestream::write is called"<<endl;
+    /*cout<<"remaining capacity: "<<remaining_capacity()<<endl;
     cout<<"data: "+data+" length:"<<data.size()<<endl;
     cout<<"endl";*/
 
@@ -58,7 +58,7 @@ void ByteStream::pop_output(const size_t len) {
     }
 
 void ByteStream::end_input() {
-    //cout<<"end input called"<<endl;
+    cout<<"end input called"<<endl;
     input_end=true;
 }
 

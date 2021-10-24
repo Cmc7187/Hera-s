@@ -27,8 +27,9 @@ uint64_t TCPSender::bytes_in_flight() const { return _bytes_in_flight; }
 
 void TCPSender::fill_window() {
 
-    cout<<"----------------------fill window-----------------------"<<endl;
-    cout<<"_abs_ack="<<_abs_ack<<"  _next_seq="<<_next_seqno<<"  windowsize="<<_windowsize<<endl;
+    cout<<"----------------------fill window start-----------------------"<<endl;
+    cout<<"_abs_ack="<<_abs_ack<<"  _next_seq="<<_next_seqno<<"  windowsize="<<_windowsize
+                <<"   buffersize="<<_stream.buffer_size()<<"    stream_eof="<< _stream.eof()<< endl;
 
 
     if(!_syn){//hasn't send syn
@@ -37,32 +38,46 @@ void TCPSender::fill_window() {
         seg.header().syn=true;
         seg.header().seqno=wrap(0,_isn);
         send_data(seg);
-        cout<<"----------------------fill window-----------------------"<<endl;
+        cout<<"----------------------fill window end-----------------------"<<endl;
         return;
         
     }
     int datalen;
-    if(_stream.buffer_size()>0&&_abs_ack==_next_seqno){//there is data to be sent,&&receiver can accept new data
-        if(_windowsize==0) datalen=1;
-        if(_windowsize>0){
-            if(_stream.buffer_size()>TCPConfig::MAX_PAYLOAD_SIZE) datalen=TCPConfig::MAX_PAYLOAD_SIZE;
-            else datalen=_stream.buffer_size();
+    if(_stream.buffer_size()){//there is data to be sent
+        //if(_windowsize==0)_windowsize=1;
+        datalen=_stream.buffer_size()>_windowsize?_windowsize:_stream.buffer_size();
+        if(datalen>TCPConfig::MAX_PAYLOAD_SIZE) datalen=TCPConfig::MAX_PAYLOAD_SIZE;
+        if(datalen==0){
+            cout<<"windowsize=0,return"<<endl;
+            cout<<"----------------------fill window end-----------------------"<<endl;
+            return;
         }
         string str=_stream.read(datalen);
         TCPSegment seg;
         seg.header().seqno=wrap(_next_seqno,_isn);
         seg.payload()=Buffer(std::move(str));
-
-        if(_stream.eof()){//all data is read out so we should set _fin
-         seg.header().fin=true;
+        if(_stream.eof()&&(_windowsize-datalen>0)&&!_fin){
+            seg.header().fin=true;
+            _fin=true;
         }
         send_data(seg);
-        cout<<"----------------------fill window-----------------------"<<endl;
+        cout<<"----------------------fill window end-----------------------"<<endl;
         return;
+    }else{//determine send fin or not,there is no data left
+        if(_stream.eof()&&(_windowsize>0)&&!_fin){
+            _fin=true;//make sure fin flag will be sent only onece
+            TCPSegment seg;
+            seg.header().fin=true;
+            seg.header().seqno=wrap(_next_seqno,_isn);
+            send_data(seg);
+            cout<<"----------------------fill window end-----------------------"<<endl;
+            return;
+        }
     }
+
     cout<<"seg wasn't send"<<endl;
 
-    cout<<"----------------------fill window-----------------------"<<endl;
+    cout<<"----------------------fill window end-----------------------"<<endl;
 
 }
 
@@ -71,18 +86,19 @@ void TCPSender::fill_window() {
 //! \returns `false` if the ackno appears invalid (acknowledges something the TCPSender hasn't sent yet)
 bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     //DUMMY_CODE(ackno, window_size);
-    cout<<"----------------------------receive ack--------------------------------"<<endl;
+    cout<<"----------------------------receive ack start--------------------------------"<<endl;
     uint64_t temp_abs_ack=unwrap(ackno,_isn,_abs_ack);
-    cout<<"_abs_ack_received="<<temp_abs_ack<<"  pre_abs_ack="<<_abs_ack<<"   _next_seq="<<_next_seqno<<endl;
+    cout<<"_abs_ack_received="<<temp_abs_ack<<"  pre_abs_ack="<<_abs_ack<<"   _next_seq="<<_next_seqno
+                <<"  windowsize="<<window_size<<endl;
     if(temp_abs_ack>_next_seqno) {
         cout<<"ack was invalid,return false"<<endl;
-        cout<<"----------------------------receive ack--------------------------------"<<endl;
+        cout<<"----------------------------receive ack end--------------------------------"<<endl;
         return false;//acknowledge something hasn't sent
     }
     if(temp_abs_ack<=_abs_ack) {
         cout<<"ack didn't upgrate ack"<<endl;
         _windowsize=window_size;
-        cout<<"----------------------------receive ack--------------------------------"<<endl;
+        cout<<"----------------------------receive ack end--------------------------------"<<endl;
         return true;//didn't update left but is valid,do nothing
     }
     else{//ack>_abs_ack,successful ack new data
@@ -108,7 +124,7 @@ bool TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
         }
         if(_outstanding_segments.empty()) _time_started=false;
         fill_window();
-        cout<<"----------------------------receive ack--------------------------------"<<endl;
+        cout<<"----------------------------receive ack end--------------------------------"<<endl;
         return true;
     }
     
@@ -140,15 +156,16 @@ void TCPSender::send_empty_segment() {
 }
 
 void TCPSender::send_data(const TCPSegment &seg){
-    cout<<"--------------------------send_data-----------------------------"<<endl;
+    cout<<"--------------------------send_data start-----------------------------"<<endl;
     _next_seqno+=seg.length_in_sequence_space();
     _bytes_in_flight+=seg.length_in_sequence_space();
     if(!_time_started){
         _time_started=true;
         _timer=0;
     }
+    _windowsize-=seg.length_in_sequence_space();
     _segments_out.push(seg);
     _outstanding_segments.push(seg);
     cout<<"segment was sent:"<<seg.header().to_string()<<"payload:"<<seg.payload().copy()<<endl;
-    cout<<"--------------------------send_data-----------------------------"<<endl;
+    cout<<"--------------------------send_data end-----------------------------"<<endl;
 }
