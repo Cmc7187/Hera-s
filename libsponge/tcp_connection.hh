@@ -20,6 +20,9 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
+    bool _active{true};
+    //判断是否需要将ack置为1
+    bool _ack{true}
 
   public:
     //! \name "Input" interface for the writer
@@ -79,6 +82,28 @@ class TCPConnection {
     //! after both streams have finished (e.g. to ACK retransmissions from the peer)
     bool active() const;
     //!@}
+
+    //向即将发送的seg中添加ack和windowsize的函数
+    void add_ack();
+
+    bool SYN_SENT(){
+      return _sender.syn()==true&&_sender.bytes_in_flight()==_sender.next_seqno_absolute()
+              &&_sender.bytes_in_flight()==1&&(!_receiver.ackno().has_value());
+    }
+
+    bool LISTEN(){
+      return _sender.next_seqno_absolute()==0&&!_receiver.ackno().has_value();//没有发送过syn也没有收到过syn
+    }
+
+    bool SYNRECEIVE(){
+      return _sender.syn()==true&&_sender.bytes_in_flight()==1&&_receiver.ackno().has_value()&&
+              _sender.next_seqno_absolute()==1&&_receiver.ackno()==wrap(1,_sender.isn());//ack=isn+1
+              //synreceive和synsent的区别在于接收方有没有收到syn
+    }
+
+    bool ESTABLISH(){
+      return 
+    }
 
     //! Construct a new connection from a configuration
     explicit TCPConnection(const TCPConfig &cfg) : _cfg{cfg} {}

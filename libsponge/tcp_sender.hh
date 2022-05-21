@@ -35,9 +35,9 @@ class TCPSender {
     uint16_t _windowsize{1};
     uint64_t _abs_ack{0};//上一个确认到的绝对序号（理解为64位的ack）
     uint64_t _bytes_in_flight{0};//已发送但是未被确认的字节数
-
+public:
     std::queue<TCPSegment> _outstanding_segments;//缓存oustandingc segments,重传会用到
-
+private:
     //标志一个连接的开始和结束的状态
     bool _syn{false};
     bool _fin{false};
@@ -104,6 +104,15 @@ class TCPSender {
     //!@}
 
     void send_data(const TCPSegment &seg);
+
+    bool syn(){
+      return _syn;
+    }
+
+    WrappingInt32 isn(){
+      return _isn;
+    }
+
 };
 
 #endif  // SPONGE_LIBSPONGE_TCP_SENDER_HH

@@ -2,6 +2,7 @@
     "files.associations": {
         "ostream": "cpp",
         "iostream": "cpp",
-        "optional": "cpp"
+        "optional": "cpp",
+        "system_error": "cpp"
     }
 }

@@ -23,7 +23,7 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
     if(seg.header().syn){//报文是开启报文的情况
         //连接开启
         if(_syn) return false;//两次开启
-        _syn=true;
+        _syn=true; 
         _isn=seg.header().seqno;
         _reassembler.push_substring(seg.payload().copy(),  unwrap(seg.header().seqno,_isn,_checkpoint)-1,
                  seg.header().fin   );//fin和syn同时传来的情况？？
@@ -75,7 +75,7 @@ bool TCPReceiver::segment_received(const TCPSegment &seg) {
 
 optional<WrappingInt32> TCPReceiver::ackno() const { 
 
-    cout<<"ackno is called"<<endl;
+    //cout<<"ackno is called"<<endl;
 
 
     if(_syn){

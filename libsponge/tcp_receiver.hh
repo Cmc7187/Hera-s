@@ -64,7 +64,6 @@ class TCPReceiver {
     //! \brief handle an inbound segment
     //! \returns `true` if any part of the segment was inside the window
     bool segment_received(const TCPSegment &seg);
-
     //! \name "Output" interface for the reader
     //!@{
     ByteStream &stream_out() { 
